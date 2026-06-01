@@ -1,7 +1,0 @@
-# Strivana v3.1 Target URLs
-# Add URLs to crawl, one per line
-# Lines starting with # are comments
-
-https://example.com
-https://example.org
-https://example.net
