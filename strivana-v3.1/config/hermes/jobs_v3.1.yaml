@@ -1,0 +1,55 @@
+# PAUSED: strivana-autonomous-v3 - Replaced by v3.1 pipeline
+# PAUSED: strivana-collect - Replaced by v3.1 parallel crawler
+# PAUSED: strivana-score - Replaced by v3.1 heuristic scorer
+# PAUSED: strivana-push - Replaced by v3.1 GHL pusher
+# PAUSED: gateway-watchdog-agent - Disabled for v3.1 migration
+
+---
+# Strivana v3.1 Hermes Job Configuration
+# Generated for production deployment
+
+jobs:
+  # Main pipeline job - runs every 6 hours
+  - name: strivana-v3.1-pipeline
+    schedule: "0 */6 * * *"  # Every 6 hours
+    type: no_agent script
+    command: scripts/run_pipeline.sh
+    env_file: .env
+    timeout: 3600  # 1 hour timeout
+    retry: 2
+    notify_on_failure: true
+    tags:
+      - pipeline
+      - v3.1
+      - production
+
+  # Health check job - runs every 30 minutes
+  - name: strivana-v3.1-healthcheck
+    schedule: "*/30 * * * *"  # Every 30 minutes
+    type: no_agent script
+    command: |
+      #!/bin/bash
+      echo "Checking Strivana v3.1 health..."
+      pgrep -f "strivana" > /dev/null && echo "✓ Pipeline processes running" || echo "✗ No pipeline processes"
+      curl -s https://services.leadconnectorhq.com/health > /dev/null && echo "✓ GHL API reachable" || echo "✗ GHL API unreachable"
+    timeout: 60
+    retry: 1
+    notify_on_failure: false
+    tags:
+      - healthcheck
+      - v3.1
+      - monitoring
+
+  # Log rotation job - daily
+  - name: strivana-v3.1-log-rotation
+    schedule: "0 0 * * *"  # Daily at midnight
+    type: no_agent script
+    command: |
+      #!/bin/bash
+      find logs/ -name "*.log" -mtime +7 -delete
+      echo "✓ Old logs rotated"
+    timeout: 300
+    retry: 0
+    tags:
+      - maintenance
+      - v3.1
